@@ -69,7 +69,7 @@ const elEndingRadar = $("ending-radar");
 // ============================================================
 const state = {
   screen: "title",
-  player: { x: WORLD_W / 2, y: WORLD_H / 2 - 100 },
+  player: { x: WORLD_W / 2 + 80, y: WORLD_H / 2 - 100 },
   camera: { x: 0, y: 0 },
   notoriety: 0,
   influence: 10,
@@ -1843,6 +1843,25 @@ function init() {
 
 function startGame() {
   switchScreen("game");
+
+  // Safety: ensure player is not stuck in water/building
+  if (!canMove(state.player.x, state.player.y)) {
+    // Try offsets to find a walkable spot nearby
+    var offsets = [
+      [80,0],[-80,0],[0,80],[0,-80],[80,80],[-80,-80],[120,0],[0,120],
+      [-120,0],[0,-120],[160,0],[0,160],[-160,0],[0,-160]
+    ];
+    for (var i = 0; i < offsets.length; i++) {
+      var tx = state.player.x + offsets[i][0];
+      var ty = state.player.y + offsets[i][1];
+      if (canMove(tx, ty)) {
+        state.player.x = tx;
+        state.player.y = ty;
+        break;
+      }
+    }
+  }
+
   addJournal("Arrive a Venise. La cite des masques cache bien des secrets. Le Doge Morosini gouverne d'une main de fer.");
   showNotification("\uD83C\uDFAD", "Bienvenue a Venise, 1486");
 
@@ -1854,7 +1873,7 @@ function startGame() {
 }
 
 function resetGame() {
-  state.player.x = WORLD_W / 2;
+  state.player.x = WORLD_W / 2 + 80;
   state.player.y = WORLD_H / 2 - 100;
   state.notoriety = 0;
   state.influence = 10;

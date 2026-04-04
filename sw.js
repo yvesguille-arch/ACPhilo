@@ -1,13 +1,19 @@
 const CACHE_NAME = "ac-wisdom-v1";
-const ASSETS = [
-  "/index.html",
-  "/css/style.css",
-  "/js/game.js",
-  "/manifest.json"
-];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(ASSETS)));
+  // Cache assets relative to service worker scope
+  e.waitUntil(
+    caches.open(CACHE_NAME).then((c) => {
+      const base = self.registration.scope;
+      return c.addAll([
+        base,
+        base + "index.html",
+        base + "css/style.css",
+        base + "js/game.js",
+        base + "manifest.json"
+      ]);
+    })
+  );
 });
 
 self.addEventListener("fetch", (e) => {

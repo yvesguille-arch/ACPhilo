@@ -1,7 +1,7 @@
 {
   "name": "Assassin's Creed — The Wisdom Engine",
   "short_name": "AC Wisdom",
-  "start_url": "/index.html",
+  "start_url": ".",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0a0a0f",

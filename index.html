@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AC Wisdom">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>Assassin's Creed — The Wisdom Engine</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Title Screen -->
+    <div id="title-screen" class="screen active">
+      <div class="title-content">
+        <div class="ac-logo">&#9668;</div>
+        <h1>ASSASSIN'S CREED</h1>
+        <h2>The Wisdom Engine</h2>
+        <p class="subtitle">Venise, 1486</p>
+        <button id="btn-start" class="btn-gold">Commencer</button>
+        <p class="install-hint" id="install-hint">Ajouter a l'ecran d'accueil pour jouer en plein ecran</p>
+      </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+      <!-- Map Canvas -->
+      <canvas id="map-canvas"></canvas>
+
+      <!-- HUD Top -->
+      <div id="hud-top">
+        <div id="hud-location">Piazza San Marco</div>
+        <div id="hud-stats">
+          <div class="stat" id="stat-notoriety">
+            <span class="stat-icon">&#128065;</span>
+            <div class="stat-bar"><div class="stat-fill" id="notoriety-fill"></div></div>
+          </div>
+          <div class="stat" id="stat-influence">
+            <span class="stat-icon">&#9733;</span>
+            <div class="stat-bar"><div class="stat-fill influence" id="influence-fill"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mission Tracker -->
+      <div id="mission-tracker">
+        <div id="mission-title">The Invisible Hand</div>
+        <div id="mission-objective">Explorez Venise</div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div id="action-bar" class="hidden">
+        <div id="action-buttons"></div>
+      </div>
+
+      <!-- Dialog Box -->
+      <div id="dialog-box" class="hidden">
+        <div id="dialog-portrait"></div>
+        <div id="dialog-content">
+          <div id="dialog-name"></div>
+          <div id="dialog-text"></div>
+          <div id="dialog-choices"></div>
+        </div>
+      </div>
+
+      <!-- Notification -->
+      <div id="notification" class="hidden">
+        <div id="notif-icon"></div>
+        <div id="notif-text"></div>
+      </div>
+
+      <!-- Virtual Joystick -->
+      <div id="joystick-zone">
+        <div id="joystick-base" class="hidden">
+          <div id="joystick-thumb"></div>
+        </div>
+      </div>
+
+      <!-- Menu Button -->
+      <button id="btn-menu">&#9776;</button>
+
+      <!-- Radar Button -->
+      <button id="btn-radar">&#9678;</button>
+    </div>
+
+    <!-- Radar Screen -->
+    <div id="radar-screen" class="screen">
+      <div class="radar-header">
+        <button id="btn-radar-close" class="btn-back">&larr;</button>
+        <h2>Profil Philosophique</h2>
+      </div>
+      <canvas id="radar-canvas"></canvas>
+      <div id="radar-details"></div>
+    </div>
+
+    <!-- Menu Screen -->
+    <div id="menu-screen" class="screen">
+      <div class="menu-content">
+        <h2>Journal</h2>
+        <div id="journal-entries"></div>
+        <div class="menu-actions">
+          <button id="btn-resume" class="btn-gold">Reprendre</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ending Screen -->
+    <div id="ending-screen" class="screen">
+      <div class="ending-content">
+        <div id="ending-icon"></div>
+        <h2 id="ending-title"></h2>
+        <p id="ending-text"></p>
+        <div id="ending-philosophy"></div>
+        <canvas id="ending-radar"></canvas>
+        <button id="btn-replay" class="btn-gold">Rejouer</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/game.js"></script>
+</body>
+</html>

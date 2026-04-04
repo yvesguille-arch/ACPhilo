@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>AC Debug — Milestones</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; background: #0a0a0f; color: #d4cfc0;
+      font-family: system-ui, sans-serif; touch-action: none; user-select: none;
+      -webkit-user-select: none; overflow: hidden; }
+    #app { width: 100%; height: 100%; position: relative; }
+    canvas { display: block; width: 100%; height: 100%; }
+    #debug-log {
+      position: fixed; top: env(safe-area-inset-top, 20px); left: 10px; right: 10px;
+      font-size: 11px; color: #0f0; background: rgba(0,0,0,0.85);
+      padding: 8px; border-radius: 6px; z-index: 100; max-height: 35vh;
+      overflow-y: auto; font-family: monospace; line-height: 1.5;
+      pointer-events: none;
+    }
+    #milestone-bar {
+      position: fixed; bottom: env(safe-area-inset-bottom, 0px); left: 0; right: 0;
+      display: flex; flex-wrap: wrap; gap: 4px; padding: 6px;
+      background: rgba(0,0,0,0.9); z-index: 100;
+    }
+    #milestone-bar button {
+      background: #1a1a2a; border: 1px solid #333; color: #888;
+      padding: 6px 10px; font-size: 11px; border-radius: 4px;
+      font-family: monospace; cursor: pointer;
+    }
+    #milestone-bar button.active { border-color: #c9a84c; color: #c9a84c; background: #1a1520; }
+    #milestone-bar button.pass { border-color: #0a0; color: #0a0; }
+    #milestone-bar button.fail { border-color: #a00; color: #a00; }
+    #touch-indicator {
+      position: fixed; width: 60px; height: 60px; border-radius: 50%;
+      border: 2px solid #c9a84c; pointer-events: none; z-index: 99;
+      display: none; transform: translate(-50%, -50%);
+    }
+    #touch-indicator .inner {
+      width: 20px; height: 20px; border-radius: 50%; background: rgba(201,168,76,0.5);
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <canvas id="c"></canvas>
+  </div>
+  <div id="debug-log"></div>
+  <div id="milestone-bar"></div>
+  <div id="touch-indicator"><div class="inner"></div></div>
+
+<script>
+(function() {
+"use strict";
+
+// === DEBUG LOG ===
+const logEl = document.getElementById("debug-log");
+const logs = [];
+function log(msg) {
+  logs.unshift("[" + (performance.now()/1000).toFixed(1) + "s] " + msg);
+  if (logs.length > 30) logs.pop();
+  logEl.innerHTML = logs.join("<br>");
+}
+
+// === CANVAS ===
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  log("Canvas: " + canvas.width + "x" + canvas.height);
+}
+window.addEventListener("resize", resize);
+resize();
+
+// === STATE ===
+const WORLD_W = 2400, WORLD_H = 2400;
+let px = WORLD_W / 2 + 80, py = WORLD_H / 2 - 100;
+let camX = 0, camY = 0;
+let joyActive = false, joyBaseX = 0, joyBaseY = 0, joyDX = 0, joyDY = 0;
+let joyTouchId = null;
+let touchCount = 0;
+let milestone = 1;
+
+// === MAP DATA ===
+const canals = [
+  { x: 0, y: WORLD_H/2-180, w: WORLD_W, h: 50 },
+  { x: WORLD_W/2-25, y: 0, w: 50, h: WORLD_H },
+  { x: WORLD_W/4, y: WORLD_H/4, w: 35, h: WORLD_H/2 },
+  { x: WORLD_W*3/4, y: WORLD_H/4, w: 35, h: WORLD_H/2 },
+];
+const bridges = [
+  { x: WORLD_W/2-40, y: WORLD_H/2-200, w: 80, h: 20 },
+  { x: WORLD_W/2-40, y: WORLD_H/2-160, w: 80, h: 20 },
+  { x: WORLD_W/2-40, y: WORLD_H/2+100, w: 80, h: 20 },
+];
+const buildings = [
+  { x: WORLD_W/2-120, y: WORLD_H/2-220, w: 80, h: 60 },
+  { x: WORLD_W/2+40, y: WORLD_H/2-220, w: 70, h: 50 },
+  { x: WORLD_W/2-140, y: WORLD_H/2-40, w: 60, h: 70 },
+  { x: WORLD_W/2+80, y: WORLD_H/2-50, w: 50, h: 60 },
+  { x: WORLD_W/2+140, y: WORLD_H/2-400, w: 120, h: 80 },
+  { x: WORLD_W/2-440, y: WORLD_H/2-120, w: 70, h: 80 },
+];
+const locations = [
+  { name: "Piazza", x: WORLD_W/2, y: WORLD_H/2-100, r: 80, color: "#c9a84c", icon: "★" },
+  { name: "Palazzo", x: WORLD_W/2+200, y: WORLD_H/2-300, r: 70, color: "#c43030", icon: "🏰" },
+  { name: "Rialto", x: WORLD_W/2-350, y: WORLD_H/2-50, r: 65, color: "#e8c84a", icon: "🏪" },
+  { name: "Arsenal", x: WORLD_W/2+350, y: WORLD_H/2+200, r: 70, color: "#8b2020", icon: "⚔" },
+];
+const npcs = [
+  { name: "Marco", emoji: "👨‍💼", x: WORLD_W/2-340, y: WORLD_H/2-40 },
+  { name: "Sofia", emoji: "👩‍🌾", x: WORLD_W/2+90, y: WORLD_H/2-90 },
+  { name: "Rossi", emoji: "💂", x: WORLD_W/2+360, y: WORLD_H/2+210 },
+];
+
+// === COLLISION ===
+function isWater(x, y) {
+  for (const c of canals) {
+    if (x > c.x && x < c.x+c.w && y > c.y && y < c.y+c.h) {
+      for (const b of bridges) {
+        if (x > b.x && x < b.x+b.w && y > b.y && y < b.y+b.h) return false;
+      }
+      return true;
+    }
+  }
+  return false;
+}
+function isBuilding(x, y) {
+  for (const b of buildings) {
+    if (x > b.x && x < b.x+b.w && y > b.y && y < b.y+b.h) return true;
+  }
+  return false;
+}
+function canMove(x, y) {
+  if (x < 10 || x > WORLD_W-10 || y < 10 || y > WORLD_H-10) return false;
+  if (milestone >= 6 && isWater(x, y)) return false;
+  if (milestone >= 6 && isBuilding(x, y)) return false;
+  return true;
+}
+
+// === TOUCH: JOYSTICK ===
+const touchInd = document.getElementById("touch-indicator");
+
+canvas.addEventListener("touchstart", function(e) {
+  e.preventDefault();
+  touchCount++;
+  const t = e.changedTouches[0];
+  log("TOUCH START x=" + Math.round(t.clientX) + " y=" + Math.round(t.clientY) + " (count=" + touchCount + ")");
+
+  // Show indicator
+  touchInd.style.display = "block";
+  touchInd.style.left = t.clientX + "px";
+  touchInd.style.top = t.clientY + "px";
+
+  if (milestone >= 3 && !joyActive) {
+    joyActive = true;
+    joyTouchId = t.identifier;
+    joyBaseX = t.clientX;
+    joyBaseY = t.clientY;
+    joyDX = 0;
+    joyDY = 0;
+  }
+}, { passive: false });
+
+window.addEventListener("touchmove", function(e) {
+  e.preventDefault();
+  for (const t of e.changedTouches) {
+    touchInd.style.left = t.clientX + "px";
+    touchInd.style.top = t.clientY + "px";
+    if (milestone >= 3 && joyActive && t.identifier === joyTouchId) {
+      let dx = t.clientX - joyBaseX;
+      let dy = t.clientY - joyBaseY;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const max = 40;
+      if (dist > max) { dx = dx/dist*max; dy = dy/dist*max; }
+      joyDX = dx / max;
+      joyDY = dy / max;
+    }
+  }
+}, { passive: false });
+
+window.addEventListener("touchend", function(e) {
+  e.preventDefault();
+  touchInd.style.display = "none";
+  for (const t of e.changedTouches) {
+    if (joyActive && t.identifier === joyTouchId) {
+      joyActive = false;
+      joyDX = 0;
+      joyDY = 0;
+      log("TOUCH END — joystick released");
+    }
+  }
+}, { passive: false });
+
+window.addEventListener("touchcancel", function(e) {
+  joyActive = false; joyDX = 0; joyDY = 0;
+  touchInd.style.display = "none";
+}, { passive: false });
+
+// === MOUSE FALLBACK ===
+let mouseDown = false;
+canvas.addEventListener("mousedown", function(e) {
+  mouseDown = true;
+  if (milestone >= 3) {
+    joyActive = true;
+    joyBaseX = e.clientX;
+    joyBaseY = e.clientY;
+    joyDX = 0; joyDY = 0;
+    log("MOUSE joystick start");
+  }
+});
+window.addEventListener("mousemove", function(e) {
+  if (!mouseDown || !joyActive) return;
+  let dx = e.clientX - joyBaseX;
+  let dy = e.clientY - joyBaseY;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  const max = 40;
+  if (dist > max) { dx = dx/dist*max; dy = dy/dist*max; }
+  joyDX = dx / max;
+  joyDY = dy / max;
+});
+window.addEventListener("mouseup", function() {
+  mouseDown = false; joyActive = false; joyDX = 0; joyDY = 0;
+});
+
+// === KEYBOARD ===
+const keys = {};
+window.addEventListener("keydown", function(e) { keys[e.key] = true; });
+window.addEventListener("keyup", function(e) { keys[e.key] = false; });
+
+// === GAME LOOP ===
+let lastTime = 0;
+function loop(ts) {
+  const dt = Math.min((ts - lastTime) / 16.67, 3);
+  lastTime = ts;
+
+  // --- UPDATE ---
+  let mx = joyDX, my = joyDY;
+  if (keys["ArrowUp"] || keys["w"] || keys["z"]) my -= 1;
+  if (keys["ArrowDown"] || keys["s"]) my += 1;
+  if (keys["ArrowLeft"] || keys["a"] || keys["q"]) mx -= 1;
+  if (keys["ArrowRight"] || keys["d"]) mx += 1;
+  const mag = Math.sqrt(mx*mx + my*my);
+  if (mag > 1) { mx /= mag; my /= mag; }
+
+  const speed = 3 * dt;
+  const nx = px + mx * speed;
+  const ny = py + my * speed;
+  if (canMove(nx, py)) px = nx;
+  if (canMove(px, ny)) py = ny;
+
+  if (milestone >= 5) {
+    camX = px - canvas.width/2;
+    camY = py - canvas.height/2;
+    camX = Math.max(0, Math.min(WORLD_W - canvas.width, camX));
+    camY = Math.max(0, Math.min(WORLD_H - canvas.height, camY));
+  }
+
+  // --- RENDER ---
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // M1: Basic canvas — just fill background
+  if (milestone >= 1) {
+    ctx.fillStyle = "#151015";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Debug crosshair at center
+    ctx.strokeStyle = "#333";
+    ctx.beginPath();
+    ctx.moveTo(canvas.width/2, 0); ctx.lineTo(canvas.width/2, canvas.height);
+    ctx.moveTo(0, canvas.height/2); ctx.lineTo(canvas.width, canvas.height/2);
+    ctx.stroke();
+
+    // M1 label
+    ctx.fillStyle = "#c9a84c";
+    ctx.font = "14px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("M" + milestone + " active — Canvas " + canvas.width + "x" + canvas.height, canvas.width/2, canvas.height - 80);
+  }
+
+  // M4: Map
+  if (milestone >= 4) {
+    // Water (canals)
+    ctx.fillStyle = "#0e2a3a";
+    for (const c of canals) ctx.fillRect(c.x - camX, c.y - camY, c.w, c.h);
+    // Bridges
+    ctx.fillStyle = "#3a3020";
+    for (const b of bridges) ctx.fillRect(b.x - camX, b.y - camY, b.w, b.h);
+    // Buildings
+    ctx.fillStyle = "#1a1520";
+    ctx.strokeStyle = "#2a2030";
+    ctx.lineWidth = 1;
+    for (const b of buildings) {
+      ctx.fillRect(b.x - camX, b.y - camY, b.w, b.h);
+      ctx.strokeRect(b.x - camX, b.y - camY, b.w, b.h);
+    }
+    // Locations
+    for (const loc of locations) {
+      const lx = loc.x - camX, ly = loc.y - camY;
+      ctx.beginPath();
+      ctx.arc(lx, ly, loc.r, 0, Math.PI * 2);
+      ctx.fillStyle = loc.color + "15";
+      ctx.fill();
+      ctx.strokeStyle = loc.color + "60";
+      ctx.stroke();
+      ctx.fillStyle = loc.color;
+      ctx.font = "24px serif";
+      ctx.textAlign = "center";
+      ctx.fillText(loc.icon, lx, ly + 8);
+      ctx.font = "10px monospace";
+      ctx.fillText(loc.name, lx, ly + 28);
+    }
+  }
+
+  // M7: NPCs
+  if (milestone >= 7) {
+    for (const npc of npcs) {
+      const nx2 = npc.x - camX, ny2 = npc.y - camY;
+      ctx.font = "24px serif";
+      ctx.textAlign = "center";
+      ctx.fillText(npc.emoji, nx2, ny2);
+      ctx.font = "9px monospace";
+      ctx.fillStyle = "#d4cfc0";
+      ctx.fillText(npc.name, nx2, ny2 + 18);
+    }
+  }
+
+  // M2: Player
+  if (milestone >= 2) {
+    const drawX = milestone >= 5 ? px - camX : canvas.width / 2;
+    const drawY = milestone >= 5 ? py - camY : canvas.height / 2;
+
+    // Glow
+    ctx.beginPath();
+    ctx.arc(drawX, drawY, 14, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(201, 168, 76, 0.15)";
+    ctx.fill();
+    // Player dot
+    ctx.beginPath();
+    ctx.arc(drawX, drawY, 7, 0, Math.PI * 2);
+    ctx.fillStyle = "#c9a84c";
+    ctx.fill();
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Position text
+    ctx.fillStyle = "#888";
+    ctx.font = "10px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("x:" + Math.round(px) + " y:" + Math.round(py), drawX, drawY - 18);
+  }
+
+  // M3: Joystick visual
+  if (milestone >= 3 && joyActive) {
+    ctx.beginPath();
+    ctx.arc(joyBaseX, joyBaseY, 40, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(201, 168, 76, 0.3)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(joyBaseX + joyDX * 40, joyBaseY + joyDY * 40, 15, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(201, 168, 76, 0.5)";
+    ctx.fill();
+  }
+
+  requestAnimationFrame(loop);
+}
+
+// === MILESTONE BUTTONS ===
+const bar = document.getElementById("milestone-bar");
+const milestones = [
+  "M1 Canvas", "M2 Player", "M3 Joystick", "M4 Map", "M5 Camera",
+  "M6 Collision", "M7 NPCs", "M8 Dialog", "M9 HUD", "M10 Radar", "M11 End"
+];
+milestones.forEach(function(name, i) {
+  const btn = document.createElement("button");
+  btn.textContent = name;
+  btn.addEventListener("click", function() {
+    milestone = i + 1;
+    log("Milestone set to M" + milestone + ": " + name);
+    updateButtons();
+  });
+  btn.addEventListener("touchend", function(e) {
+    e.preventDefault(); e.stopPropagation();
+    milestone = i + 1;
+    log("Milestone set to M" + milestone + ": " + name);
+    updateButtons();
+  });
+  bar.appendChild(btn);
+});
+
+function updateButtons() {
+  const btns = bar.querySelectorAll("button");
+  btns.forEach(function(b, i) {
+    b.classList.toggle("active", i + 1 === milestone);
+  });
+}
+updateButtons();
+
+// === INIT ===
+log("Debug started — M1 active");
+log("Player spawn: x=" + px + " y=" + py);
+log("Canal check at spawn: " + (isWater(px, py) ? "IN WATER!" : "OK"));
+log("Building check at spawn: " + (isBuilding(px, py) ? "IN BUILDING!" : "OK"));
+log("canMove at spawn: " + canMove(px, py));
+
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

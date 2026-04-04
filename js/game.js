@@ -17,10 +17,10 @@ const GOLD = "#c9a84c";
 const GOLD_DIM = "#8a7233";
 const WATER_COLOR = "#0e2a3a";
 const WATER_LIGHT = "#133348";
-const BUILDING_COLOR = "#1a1520";
-const BUILDING_BORDER = "#2a2030";
+const BUILDING_COLOR = "#1e1828";
+const BUILDING_BORDER = "#342a40";
 const BRIDGE_COLOR = "#3a3020";
-const PATH_COLOR = "#151015";
+const PATH_COLOR = "#1e1825";
 
 // ============================================================
 // DOM REFERENCES
@@ -843,15 +843,16 @@ function drawLocations() {
     ctx.fill();
 
     // Icon
-    ctx.font = "20px serif";
+    ctx.fillStyle = loc.color || GOLD;
+    ctx.font = "24px serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(loc.icon, lx, ly - 15);
 
     // Name
-    ctx.font = "9px sans-serif";
+    ctx.font = "11px sans-serif";
     ctx.fillStyle = visited ? GOLD_DIM : GOLD;
-    ctx.fillText(loc.name, lx, ly + 8);
+    ctx.fillText(loc.name, lx, ly + 12);
 
     // Pulsing ring for unvisited
     if (!visited) {
@@ -911,22 +912,28 @@ function drawPlayer() {
   const px = state.player.x - state.camera.x;
   const py = state.player.y - state.camera.y;
 
+  // Outer glow
+  ctx.fillStyle = "rgba(201, 168, 76, 0.12)";
+  ctx.beginPath();
+  ctx.arc(px, py, 25, 0, Math.PI * 2);
+  ctx.fill();
+
   // Shadow
   ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
   ctx.beginPath();
-  ctx.ellipse(px, py + 8, 8, 4, 0, 0, Math.PI * 2);
+  ctx.ellipse(px, py + 10, 10, 5, 0, 0, Math.PI * 2);
   ctx.fill();
 
   // Hooded figure - triangle (hood) + body
-  ctx.fillStyle = "#1a1520";
+  ctx.fillStyle = "#2a2035";
   ctx.strokeStyle = GOLD;
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 2;
 
-  // Body
+  // Body (bigger)
   ctx.beginPath();
-  ctx.moveTo(px, py - 12);
-  ctx.lineTo(px - 8, py + 6);
-  ctx.lineTo(px + 8, py + 6);
+  ctx.moveTo(px, py - 16);
+  ctx.lineTo(px - 11, py + 8);
+  ctx.lineTo(px + 11, py + 8);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
@@ -934,7 +941,7 @@ function drawPlayer() {
   // Hood peak highlight
   ctx.fillStyle = GOLD;
   ctx.beginPath();
-  ctx.arc(px, py - 12, 2, 0, Math.PI * 2);
+  ctx.arc(px, py - 16, 3, 0, Math.PI * 2);
   ctx.fill();
 
   // Eagle vision glow when near something
@@ -1787,6 +1794,16 @@ function render() {
   drawVignette();
 
   ctx.restore();
+
+  // Debug overlay (bottom left)
+  ctx.fillStyle = "rgba(0,0,0,0.7)";
+  ctx.fillRect(4, canvas.height - 54, 220, 50);
+  ctx.fillStyle = "#0f0";
+  ctx.font = "10px monospace";
+  ctx.textAlign = "left";
+  ctx.fillText("pos: " + Math.round(state.player.x) + "," + Math.round(state.player.y) + " cam: " + Math.round(state.camera.x) + "," + Math.round(state.camera.y), 8, canvas.height - 40);
+  ctx.fillText("joy: dx=" + joystick.dx.toFixed(2) + " dy=" + joystick.dy.toFixed(2) + " act=" + joystick.active, 8, canvas.height - 28);
+  ctx.fillText("canMove: " + canMove(state.player.x, state.player.y) + " water: " + isWater(state.player.x, state.player.y), 8, canvas.height - 16);
 }
 
 function drawVignette() {

@@ -1779,6 +1779,19 @@ function update(dt) {
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // === DIAGNOSTIC: bright white box + text at top ===
+  // If you can't see this, the canvas itself is broken
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, 60);
+  ctx.fillStyle = "#ff0000";
+  ctx.font = "bold 16px monospace";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  ctx.fillText("CANVAS OK w=" + canvas.width + " h=" + canvas.height, 10, 5);
+  ctx.fillText("player=" + Math.round(state.player.x) + "," + Math.round(state.player.y) + " screen=" + state.screen, 10, 25);
+  ctx.fillText("water=" + isWater(state.player.x, state.player.y) + " bldg=" + isBuilding(state.player.x, state.player.y) + " move=" + canMove(state.player.x, state.player.y), 10, 42);
+  // === END DIAGNOSTIC ===
+
   ctx.save();
 
   // Draw everything relative to camera

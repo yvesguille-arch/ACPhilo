@@ -1717,13 +1717,30 @@ function switchScreen(screenName) {
 // ============================================================
 let lastTime = 0;
 
+let _frameCount = 0;
 function gameLoop(timestamp) {
-  const dt = Math.min((timestamp - lastTime) / 16.67, 3); // normalize to ~60fps steps, cap at 3
+  const dt = Math.min((timestamp - lastTime) / 16.67, 3);
   lastTime = timestamp;
+  _frameCount++;
 
   if (state.screen === "game") {
     update(dt);
     render();
+  }
+
+  // HTML debug (always visible, not canvas-dependent)
+  if (_frameCount % 30 === 0) {
+    var dbg = document.getElementById("html-debug");
+    if (dbg) {
+      dbg.innerHTML = "FRAME:" + _frameCount
+        + " | screen:" + state.screen
+        + " | canvas:" + canvas.width + "x" + canvas.height
+        + " | CSS:" + canvas.offsetWidth + "x" + canvas.offsetHeight
+        + " | player:" + Math.round(state.player.x) + "," + Math.round(state.player.y)
+        + " | cam:" + Math.round(state.camera.x) + "," + Math.round(state.camera.y)
+        + " | joy:" + joystick.active + " dx:" + joystick.dx.toFixed(1)
+        + " | move:" + canMove(state.player.x, state.player.y);
+    }
   }
 
   requestAnimationFrame(gameLoop);

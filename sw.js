@@ -1,31 +1,28 @@
-const CACHE_NAME = "ac-wisdom-v1";
+const CACHE_NAME = "ac-wisdom-v3";
 
 self.addEventListener("install", (e) => {
-  // Cache assets relative to service worker scope
+  // Force immediate activation (don't wait for old SW to die)
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (e) => {
+  // Take control immediately + delete ALL old caches
   e.waitUntil(
-    caches.open(CACHE_NAME).then((c) => {
-      const base = self.registration.scope;
-      return c.addAll([
-        base,
-        base + "index.html",
-        base + "css/style.css",
-        base + "js/game.js",
-        base + "manifest.json"
-      ]);
-    })
+    caches.keys().then((keys) =>
+      Promise.all(keys.map((k) => caches.delete(k)))
+    ).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener("fetch", (e) => {
+  // Network-first: always get fresh files, cache as backup
   e.respondWith(
-    caches.match(e.request).then((r) => r || fetch(e.request))
-  );
-});
-
-self.addEventListener("activate", (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+    fetch(e.request)
+      .then((response) => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((c) => c.put(e.request, clone));
+        return response;
+      })
+      .catch(() => caches.match(e.request))
   );
 });

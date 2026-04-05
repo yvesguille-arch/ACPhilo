@@ -127,7 +127,13 @@
   <script src="js/game.js"></script>
   <script>
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("sw.js").catch(function() {});
+      // Force update: unregister old SW, re-register new one
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        regs.forEach(function(r) { r.unregister(); });
+      });
+      setTimeout(function() {
+        navigator.serviceWorker.register("sw.js").catch(function() {});
+      }, 1000);
     }
   </script>
 </body>

@@ -665,8 +665,18 @@ function canMove(px, py) {
 // RENDERING - MAP
 // ============================================================
 function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  // Use clientWidth/Height of parent for reliable sizing on iOS
+  var w = canvas.parentElement ? canvas.parentElement.clientWidth : window.innerWidth;
+  var h = canvas.parentElement ? canvas.parentElement.clientHeight : window.innerHeight;
+  // Fallback if parent reports 0
+  if (!w || !h) { w = window.innerWidth; h = window.innerHeight; }
+  if (!w || !h) { w = document.documentElement.clientWidth; h = document.documentElement.clientHeight; }
+  if (!w || !h) { w = screen.width; h = screen.height; }
+  canvas.width = w;
+  canvas.height = h;
+  // Also set CSS size explicitly (avoid CSS 100% scaling mismatch)
+  canvas.style.width = w + "px";
+  canvas.style.height = h + "px";
 }
 
 function drawWater() {
@@ -1852,7 +1862,11 @@ function drawVignette() {
 // ============================================================
 function init() {
   resizeCanvas();
+  // iOS needs a second resize after layout settles
+  setTimeout(resizeCanvas, 100);
+  setTimeout(resizeCanvas, 500);
   window.addEventListener("resize", resizeCanvas);
+  window.addEventListener("orientationchange", function() { setTimeout(resizeCanvas, 200); });
 
   generateMap();
   initJoystick();

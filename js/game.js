@@ -15,12 +15,12 @@ const TILE = 40;
 const PLAYER_SPEED = 2.8;
 const GOLD = "#c9a84c";
 const GOLD_DIM = "#8a7233";
-const WATER_COLOR = "#0e2a3a";
-const WATER_LIGHT = "#133348";
-const BUILDING_COLOR = "#1e1828";
-const BUILDING_BORDER = "#342a40";
-const BRIDGE_COLOR = "#3a3020";
-const PATH_COLOR = "#1e1825";
+const WATER_COLOR = "#1a4060";
+const WATER_LIGHT = "#2a5a80";
+const BUILDING_COLOR = "#3a2848";
+const BUILDING_BORDER = "#5a4a6a";
+const BRIDGE_COLOR = "#6a5a40";
+const PATH_COLOR = "#2d2535";
 
 // ============================================================
 // DOM REFERENCES
@@ -735,13 +735,13 @@ function drawBuildings() {
     ctx.strokeRect(bx, by, b.w, b.h);
 
     // Windows (warm lights)
-    ctx.fillStyle = "rgba(201, 168, 76, 0.15)";
+    ctx.fillStyle = "rgba(201, 168, 76, 0.3)";
     const cols = Math.floor(b.w / 16);
     const rows = Math.floor(b.h / 16);
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         if (Math.random() > 0.4) {
-          const winBright = 0.1 + Math.random() * 0.3;
+          const winBright = 0.2 + Math.random() * 0.4;
           ctx.fillStyle = `rgba(201, 168, 76, ${winBright})`;
           ctx.fillRect(bx + 6 + c * 16, by + 6 + r * 16, 6, 6);
         }
@@ -810,7 +810,7 @@ function drawCanals() {
     ctx.globalAlpha = 1;
 
     // Canal edges
-    ctx.strokeStyle = "#0a1a2a";
+    ctx.strokeStyle = "#0e2a40";
     ctx.lineWidth = 2;
     if (c.w > c.h) {
       ctx.beginPath();
@@ -1715,7 +1715,7 @@ function switchScreen(screenName) {
   });
   switch (screenName) {
     case "title": elTitleScreen.classList.add("active"); break;
-    case "game": elGameScreen.classList.add("active"); break;
+    case "game": elGameScreen.classList.add("active"); resizeCanvas(); break;
     case "radar": elRadarScreen.classList.add("active"); updateRadarScreen(); break;
     case "menu": elMenuScreen.classList.add("active"); updateJournalDisplay(); break;
     case "ending": elEndingScreen.classList.add("active"); break;
@@ -1736,21 +1736,6 @@ function gameLoop(timestamp) {
   if (state.screen === "game") {
     update(dt);
     render();
-  }
-
-  // HTML debug (always visible, not canvas-dependent)
-  if (_frameCount % 30 === 0) {
-    var dbg = document.getElementById("html-debug");
-    if (dbg) {
-      dbg.innerHTML = "FRAME:" + _frameCount
-        + " | screen:" + state.screen
-        + " | canvas:" + canvas.width + "x" + canvas.height
-        + " | CSS:" + canvas.offsetWidth + "x" + canvas.offsetHeight
-        + " | player:" + Math.round(state.player.x) + "," + Math.round(state.player.y)
-        + " | cam:" + Math.round(state.camera.x) + "," + Math.round(state.camera.y)
-        + " | joy:" + joystick.active + " dx:" + joystick.dx.toFixed(1)
-        + " | move:" + canMove(state.player.x, state.player.y);
-    }
   }
 
   requestAnimationFrame(gameLoop);
@@ -1806,19 +1791,6 @@ function update(dt) {
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // === DIAGNOSTIC: bright white box + text at top ===
-  // If you can't see this, the canvas itself is broken
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, canvas.width, 60);
-  ctx.fillStyle = "#ff0000";
-  ctx.font = "bold 16px monospace";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "top";
-  ctx.fillText("CANVAS OK w=" + canvas.width + " h=" + canvas.height, 10, 5);
-  ctx.fillText("player=" + Math.round(state.player.x) + "," + Math.round(state.player.y) + " screen=" + state.screen, 10, 25);
-  ctx.fillText("water=" + isWater(state.player.x, state.player.y) + " bldg=" + isBuilding(state.player.x, state.player.y) + " move=" + canMove(state.player.x, state.player.y), 10, 42);
-  // === END DIAGNOSTIC ===
-
   ctx.save();
 
   // Draw everything relative to camera
@@ -1834,16 +1806,6 @@ function render() {
   drawVignette();
 
   ctx.restore();
-
-  // Debug overlay (bottom left)
-  ctx.fillStyle = "rgba(0,0,0,0.7)";
-  ctx.fillRect(4, canvas.height - 54, 220, 50);
-  ctx.fillStyle = "#0f0";
-  ctx.font = "10px monospace";
-  ctx.textAlign = "left";
-  ctx.fillText("pos: " + Math.round(state.player.x) + "," + Math.round(state.player.y) + " cam: " + Math.round(state.camera.x) + "," + Math.round(state.camera.y), 8, canvas.height - 40);
-  ctx.fillText("joy: dx=" + joystick.dx.toFixed(2) + " dy=" + joystick.dy.toFixed(2) + " act=" + joystick.active, 8, canvas.height - 28);
-  ctx.fillText("canMove: " + canMove(state.player.x, state.player.y) + " water: " + isWater(state.player.x, state.player.y), 8, canvas.height - 16);
 }
 
 function drawVignette() {

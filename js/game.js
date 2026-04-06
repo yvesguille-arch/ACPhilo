@@ -1908,6 +1908,9 @@ function init() {
   $("btn-resume").addEventListener("click", function() { switchScreen("game"); });
   $("btn-resume").addEventListener("touchend", function(e) { e.preventDefault(); switchScreen("game"); });
 
+  $("btn-close-menu").addEventListener("click", function() { switchScreen("game"); });
+  $("btn-close-menu").addEventListener("touchend", function(e) { e.preventDefault(); switchScreen("game"); });
+
   $("btn-replay").addEventListener("click", function() { resetGame(); });
   $("btn-replay").addEventListener("touchend", function(e) { e.preventDefault(); resetGame(); });
 

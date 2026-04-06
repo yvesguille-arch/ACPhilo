@@ -475,6 +475,25 @@ html, body {
   -webkit-overflow-scrolling: touch;
 }
 
+.btn-close {
+  position: absolute;
+  top: calc(var(--safe-top) + 0.5rem);
+  right: 1rem;
+  background: none;
+  border: 1px solid var(--gold-dim);
+  color: var(--gold);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .menu-content h2 {
   font-size: 1.2rem;
   color: var(--gold);

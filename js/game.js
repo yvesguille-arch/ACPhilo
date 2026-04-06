@@ -558,14 +558,52 @@ function generateMap() {
   canals.push({ x: WORLD_W / 2 - 400, y: WORLD_H / 2 + 80, w: 30, h: 300 });
   canals.push({ x: WORLD_W / 2 + 300, y: WORLD_H / 2 - 250, w: 300, h: 30 });
 
-  // Bridges over canals
-  bridges.push({ x: WORLD_W / 2 - 40, y: WORLD_H / 2 - 200, w: 80, h: 20 });
-  bridges.push({ x: WORLD_W / 2 - 40, y: WORLD_H / 2 - 160, w: 80, h: 20 });
-  bridges.push({ x: WORLD_W / 2 - 370, y: WORLD_H / 2 - 200, w: 20, h: 60 });
-  bridges.push({ x: WORLD_W / 2 + 300, y: WORLD_H / 2 - 200, w: 20, h: 60 });
-  bridges.push({ x: WORLD_W / 2 - 40, y: WORLD_H / 2 + 100, w: 80, h: 20 });
-  bridges.push({ x: WORLD_W / 4 - 10, y: WORLD_H / 2 - 200, w: 55, h: 20 });
-  bridges.push({ x: WORLD_W * 3 / 4 - 10, y: WORLD_H / 2 - 200, w: 55, h: 20 });
+  // Bridges over canals — each bridge fully spans the canal it crosses
+  // A horizontal bridge (w > h) crosses a vertical canal
+  // A vertical bridge (h > w) crosses a horizontal canal
+
+  // === Bridges over VERTICAL grand canal (x=1175-1225, w=50) ===
+  // Need horizontal bridges: w=70+, h=25
+  bridges.push({ x: 1165, y: 900, w: 75, h: 25 });   // north of horizontal canal
+  bridges.push({ x: 1165, y: 1150, w: 75, h: 25 });   // south of horizontal canal (near piazza)
+  bridges.push({ x: 1165, y: 700, w: 75, h: 25 });    // far north (toward palazzo/church)
+  bridges.push({ x: 1165, y: 1500, w: 75, h: 25 });   // far south (toward murano)
+
+  // === Bridges over HORIZONTAL grand canal (y=1020-1070, h=50) ===
+  // Need vertical bridges: w=25, h=70+
+  bridges.push({ x: 850, y: 1010, w: 25, h: 70 });    // near rialto
+  bridges.push({ x: 1350, y: 1010, w: 25, h: 70 });   // east of piazza (toward palazzo)
+  bridges.push({ x: 400, y: 1010, w: 25, h: 70 });    // far west
+  bridges.push({ x: 2000, y: 1010, w: 25, h: 70 });   // far east
+
+  // === Grand canal intersection (x=1175-1225, y=1020-1070) ===
+  bridges.push({ x: 1165, y: 1010, w: 75, h: 70 });   // large bridge at crossing
+
+  // === Bridges over LEFT vertical canal (x=600-635, w=35) ===
+  bridges.push({ x: 590, y: 800, w: 55, h: 25 });     // north section
+  bridges.push({ x: 590, y: 1150, w: 55, h: 25 });    // south section
+  bridges.push({ x: 590, y: 1400, w: 55, h: 25 });    // toward porto
+
+  // === Bridges over RIGHT vertical canal (x=1800-1835, w=35) ===
+  bridges.push({ x: 1790, y: 800, w: 55, h: 25 });    // north section
+  bridges.push({ x: 1790, y: 1150, w: 55, h: 25 });   // south section
+  bridges.push({ x: 1790, y: 1400, w: 55, h: 25 });   // south section
+
+  // === Bridges over TOP horizontal canal (y=600-635, h=35) ===
+  bridges.push({ x: 900, y: 590, w: 25, h: 55 });     // left section
+  bridges.push({ x: 1400, y: 590, w: 25, h: 55 });    // right section
+
+  // === Bridges over BOTTOM horizontal canal (y=1800-1835, h=35) ===
+  bridges.push({ x: 900, y: 1790, w: 25, h: 55 });    // left section
+  bridges.push({ x: 1400, y: 1790, w: 25, h: 55 });   // right section
+
+  // === Bridges over SMALL vertical canal (x=800-830, w=30, y=1280-1580) ===
+  bridges.push({ x: 790, y: 1350, w: 50, h: 25 });
+  bridges.push({ x: 790, y: 1500, w: 50, h: 25 });
+
+  // === Bridges over SMALL horizontal canal (x=1500-1800, y=950-980, h=30) ===
+  bridges.push({ x: 1600, y: 940, w: 25, h: 50 });
+  bridges.push({ x: 1700, y: 940, w: 25, h: 50 });
 
   // Generate buildings in blocks around locations
   const bldgSeed = [
@@ -754,23 +792,43 @@ function drawBridges() {
   for (const b of bridges) {
     const bx = b.x - state.camera.x;
     const by = b.y - state.camera.y;
+    // Bridge base
     ctx.fillStyle = BRIDGE_COLOR;
     ctx.fillRect(bx, by, b.w, b.h);
-    ctx.strokeStyle = "#4a4030";
-    ctx.lineWidth = 1;
+    // Border
+    ctx.strokeStyle = "#7a6a50";
+    ctx.lineWidth = 1.5;
     ctx.strokeRect(bx, by, b.w, b.h);
-    // Railing lines
-    ctx.strokeStyle = "#5a5040";
+    // Plank lines across the bridge
+    ctx.strokeStyle = "#8a7a58";
     ctx.lineWidth = 0.5;
     if (b.w > b.h) {
+      // Horizontal bridge — vertical planks
+      for (let px = bx + 6; px < bx + b.w - 4; px += 8) {
+        ctx.beginPath();
+        ctx.moveTo(px, by + 2); ctx.lineTo(px, by + b.h - 2);
+        ctx.stroke();
+      }
+      // Railings
+      ctx.strokeStyle = "#9a8a60";
+      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(bx, by + 2); ctx.lineTo(bx + b.w, by + 2);
-      ctx.moveTo(bx, by + b.h - 2); ctx.lineTo(bx + b.w, by + b.h - 2);
+      ctx.moveTo(bx, by); ctx.lineTo(bx + b.w, by);
+      ctx.moveTo(bx, by + b.h); ctx.lineTo(bx + b.w, by + b.h);
       ctx.stroke();
     } else {
+      // Vertical bridge — horizontal planks
+      for (let py = by + 6; py < by + b.h - 4; py += 8) {
+        ctx.beginPath();
+        ctx.moveTo(bx + 2, py); ctx.lineTo(bx + b.w - 2, py);
+        ctx.stroke();
+      }
+      // Railings
+      ctx.strokeStyle = "#9a8a60";
+      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(bx + 2, by); ctx.lineTo(bx + 2, by + b.h);
-      ctx.moveTo(bx + b.w - 2, by); ctx.lineTo(bx + b.w - 2, by + b.h);
+      ctx.moveTo(bx, by); ctx.lineTo(bx, by + b.h);
+      ctx.moveTo(bx + b.w, by); ctx.lineTo(bx + b.w, by + b.h);
       ctx.stroke();
     }
   }

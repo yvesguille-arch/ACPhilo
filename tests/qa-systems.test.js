@@ -202,10 +202,9 @@ describe("D. Collision Detection", () => {
   });
 
   test("bridge over canal is walkable", () => {
-    // Bridge at WORLD_W/2-40, WORLD_H/2-200, w:80, h:20
-    const bx = game.WORLD_W / 2;
-    const by = game.WORLD_H / 2 - 190;
-    // This is on a bridge over the vertical canal
+    // Bridge at x=1165, y=1150, w=75, h=25 — crosses vertical grand canal
+    const bx = 1200; // center of bridge, on the vertical canal
+    const by = 1160; // within bridge height
     expect(game.isWater(bx, by)).toBe(false);
   });
 

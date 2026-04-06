@@ -1916,7 +1916,7 @@ function init() {
 
   // Prevent default touch behaviors
   document.addEventListener("touchmove", function(e) {
-    if (e.target.closest("#dialog-choices") || e.target.closest("#journal-entries") || e.target.closest("#radar-details")) return;
+    if (e.target.closest("#dialog-choices") || e.target.closest("#journal-entries") || e.target.closest("#radar-details") || e.target.closest("#menu-screen")) return;
     e.preventDefault();
   }, { passive: false });
 
